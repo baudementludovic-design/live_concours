@@ -46,7 +46,8 @@ header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--b
 .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .search input{padding-right:58px}
 .search .go{position:absolute;right:4px;top:4px;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
-.badge.wait{background:color-mix(in srgb,#e8590c 14%,transparent);color:#e8590c}
+.badge.wait{background:#f1ebfe;color:#7c3aed}
+@media (prefers-color-scheme: dark){.badge.wait{background:#2a1f45;color:#b197fc}}
 .search svg{position:absolute;left:11px;top:11px;width:18px;height:18px;color:var(--faint)}
 
 nav.tabs{display:flex;gap:4px;padding-bottom:10px;overflow-x:auto;scrollbar-width:none}
@@ -451,9 +452,16 @@ function renderConcours(c) {
   } else {
     const r = c.rounds.find(x => x.key === step);
     const counts = { all: r.matches.length };
-    ["encours", "ajouer", "fini"].forEach(s => counts[s] = r.matches.filter(m => m.status === s).length);
-    const list = r.matches.filter(m => state.filter === "all" || m.status === state.filter);
-    const fl = [["all","Toutes"],["encours","En cours"],["ajouer","À jouer"],["fini","Terminées"]]
+    // En cours = partie non terminée avec un terrain ; En attente = les 2 équipes connues, pas encore de terrain
+    const FILTRES = {
+      encours: m => m.status === "encours" && m.court !== NONE,
+      attente: m => (m.status === "encours" && m.court === NONE) || m.status === "ajouer",
+      fini: m => m.status === "fini"
+    };
+    if (state.filter !== "all" && !FILTRES[state.filter]) state.filter = "all";
+    Object.keys(FILTRES).forEach(s => counts[s] = r.matches.filter(FILTRES[s]).length);
+    const list = r.matches.filter(m => state.filter === "all" || FILTRES[state.filter](m));
+    const fl = [["all","Toutes"],["encours","En cours"],["attente","En attente"],["fini","Terminées"]]
       .map(([k, l]) => `<button data-filter="${k}" aria-pressed="${state.filter === k}">${l}<span class="c">${counts[k]}</span></button>`).join("");
     content = `<div class="sec-head"><div><h2 style="font-size:16px">${r.label}</h2><p>${r.matches.length} parties</p></div><div class="filters">${fl}</div></div>
       ${list.length ? `<div class="grid">${list.map(matchCard).join("")}</div>` : `<div class="empty">Aucune partie dans cette catégorie.</div>`}`;
