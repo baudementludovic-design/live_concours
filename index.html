@@ -242,6 +242,18 @@ dialog{box-shadow:0 30px 80px rgba(16,24,40,.25)}
 dialog::backdrop{background:rgba(16,24,40,.45)}
 .message{background:radial-gradient(120% 120% at 50% 0%,var(--wait-soft),#fff 65%)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(15,157,88,.5)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+#view{margin-top:22px}  /* espace laissé par le bandeau de chiffres supprimé */
+/* Nombre d'équipes sous le titre */
+.brand .teamsline{font-size:12px;font-weight:700;color:var(--ink);margin-top:2px}
+/* Terrain cliquable : détail de la partie */
+.court[data-court]{cursor:pointer}
+.court[data-court]:hover{box-shadow:0 0 0 3px var(--cs)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.duo .side{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel)}
+.duo .side.win{border-color:var(--accent)}
+.duo .sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.duo .sh .num{font-size:22px;font-weight:900;color:var(--accent)}
+@media (max-width:560px){.duo{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -252,7 +264,8 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
       <div class="brand">
         <span class="logo" aria-hidden="true"></span>
         <div style="min-width:0"><h1 id="title">Concours</h1>
-        <div class="sub" id="subtitle"></div></div>
+        <div class="sub" id="subtitle"></div>
+        <div class="teamsline" id="teamsline"></div></div>
       </div>
       <div class="clockbox"><div class="clock" id="clock">--:--</div><div class="live"><span class="dot"></span><span id="updated">Connexion…</span></div></div>
       <button class="btn" id="btnTeams" title="Liste des équipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.8a3.3 3.3 0 0 1 0 6.4M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg><span>Liste des équipes</span></button>
@@ -267,7 +280,6 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 </header>
 
 <main class="wrap">
-  <section class="stats" id="stats"></section>
   <section id="view"></section>
   <div class="legend">
     <span><i style="background:var(--live)"></i>En cours sur un terrain</span>
@@ -295,7 +307,7 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 /* ============ CONFIGURATION ============ */
 const CONFIG = {
   dataFile: "donnees.js",   // fichier produit par surveillance.ps1, dans le même dossier que cette page
-  refreshSeconds: 5,        // fréquence de relecture
+  refreshSeconds: 30,       // fréquence de relecture (version en ligne)
   staleMinutes: 3,          // avertit si le script de surveillance ne répond plus
   fileName: "",
   // Plus tard : noms des équipes { 1: "Dupont / Martin", ... }
@@ -545,7 +557,7 @@ function renderCourts() {
     const m = byCourt[t], busy = MODEL.courts.busy[t - 1] === 1 || m;
     if (m) {
       const c = CONCOURS[m.concours];
-      tiles.push(`<div class="court busy" style="--cc:var(--${c.color});--cs:var(--${c.color}-soft)"><div class="cn">Terrain<span class="chip">${m.concours}</span></div><div class="big">${t}</div><div><div class="cm">${m.a} – ${m.b}</div><div class="cs">${m.round} · P${m.n}</div></div></div>`);
+      tiles.push(`<div class="court busy" data-court="${t}" title="Voir la partie" style="--cc:var(--${c.color});--cs:var(--${c.color}-soft)"><div class="cn">Terrain<span class="chip">${m.concours}</span></div><div class="big">${t}</div><div><div class="cm">${m.a} – ${m.b}</div><div class="cs">${m.round} · P${m.n}</div></div></div>`);
     } else if (busy) {
       tiles.push(`<div class="court busy" style="--cc:var(--faint);--cs:var(--panel-2)"><div class="cn">Terrain</div><div class="big">${t}</div><div class="cs">Occupé</div></div>`);
     } else {
@@ -557,7 +569,7 @@ function renderCourts() {
 }
 
 function render() {
-  renderTabs(); renderStats();
+  renderTabs();
   state.tab === "T" ? renderCourts() : renderConcours(MODEL.concours[state.tab]);
 }
 
@@ -604,6 +616,20 @@ function openTeamList() {
   $("#tq").focus();
 }
 
+/* ============ DÉTAIL D'UN TERRAIN ============ */
+function showCourt(t) {
+  const m = allMatches().find(x => x.status === "encours" && x.court === t);
+  if (!m) return;
+  const c = CONCOURS[m.concours];
+  const side = v => isTeam(v)
+    ? `<div class="side"><div class="sh"><span class="num">N° ${v}</span><button class="link" data-team="${v}">Voir le parcours →</button></div>${playersHtml(v)}</div>`
+    : `<div class="side"><div class="count">Équipe à venir</div></div>`;
+  $("#d-title").textContent = `Terrain ${t}`;
+  $("#d-body").innerHTML = `<div style="--accent:var(--${c.color})"><div class="now"><b>Partie en cours</b>${c.label} · ${m.round} · partie ${m.n}</div>
+    <div class="duo">${side(m.a)}${side(m.b)}</div></div>`;
+  if (!$("#dlg").open) $("#dlg").showModal();
+}
+
 /* ============ PARCOURS D'UNE ÉQUIPE ============ */
 function showTeam(n) {
   if (!isTeam(n) || n > MODEL.teams) return;
@@ -633,7 +659,8 @@ document.addEventListener("click", e => {
   const t = e.target.closest("[data-tab]"); if (t) { state.tab = t.dataset.tab; state.filter = "all"; render(); return; }
   const s = e.target.closest("[data-step]"); if (s) { state.step[state.tab] = s.dataset.step; state.filter = "all"; render(); return; }
   const f = e.target.closest("[data-filter]"); if (f) { state.filter = f.dataset.filter; render(); return; }
-  const tm = e.target.closest("[data-team]"); if (tm) showTeam(Number(tm.dataset.team));
+  const tm = e.target.closest("[data-team]"); if (tm) { showTeam(Number(tm.dataset.team)); return; }
+  const ct = e.target.closest("[data-court]"); if (ct) showCourt(Number(ct.dataset.court));
 });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const v = Number(e.target.value); setTimeout(() => showTeam(v), 0); } });
 $("#qgo").addEventListener("click", e => { e.preventDefault(); const v = Number($("#q").value); $("#q").blur(); setTimeout(() => showTeam(v), 0); });
@@ -658,7 +685,7 @@ function load(text) {
   let msg = (text || "").match(/^\s*MESSAGE\s*,(.*)$/mi);
   // Fichier sans données de concours (pas de ligne EquipeNbre) : sa première ligne de texte sert de message
   if (!msg && !/EquipeNbre/i.test(text || "")) { const l = (text || "").split(/\r?\n/).find(x => x.trim()); if (l) msg = [l, l]; }
-  ["#tabs", "#stats", ".legend"].forEach(s => { $(s).style.display = msg ? "none" : ""; });
+  ["#tabs", ".legend", "#teamsline"].forEach(s => { $(s).style.display = msg ? "none" : ""; });
   if (msg) {
     $("#title").textContent = document.title = "Résultats en direct";
     $("#subtitle").textContent = ""; $("#foot").textContent = "";
@@ -668,6 +695,7 @@ function load(text) {
   const h = headerFromFileName(CONFIG.fileName);
   $("#title").textContent = h.title; document.title = h.title;
   $("#subtitle").textContent = h.sub;
+  $("#teamsline").textContent = MODEL.teams ? `${MODEL.teams} équipes au départ` : "";
   $("#foot").textContent = `Source : ${CONFIG.fileName} · ${MODEL.teams} équipes · ${MODEL.courts.count} terrains`;
   render();
 }
@@ -704,7 +732,7 @@ function poll() {
       TEAMS = parseTeams(d.teams);
       if ($("#dlgTeams").open) renderTeamList();
       try { load(d.text); } catch (e) { console.error(e); setLive(false, "Fichier illisible"); return; }
-      if (dlgOpen) { const n = Number(dlgOpen.replace(/\D/g, "")); if (n) showTeam(n); }
+      if (dlgOpen) { const n = Number(dlgOpen.replace(/\D/g, "")); if (n) { if (/^Terrain/.test(dlgOpen)) { if (allMatches().some(x => x.status === "encours" && x.court === n)) showCourt(n); else $("#dlg").close(); } else showTeam(n); } }
     }
     const mod = new Date(d.modified);
     const stale = d.heartbeat && (Date.now() - new Date(d.heartbeat)) > CONFIG.staleMinutes * 60000;
@@ -713,8 +741,8 @@ function poll() {
   };
   s.onerror = () => {
     s.remove();
-    setLive(false, "En attente des données");
-    showWaiting("En attente des données… Lancez <b>demarrer.bat</b> pour démarrer la surveillance du fichier.");
+    setLive(false, "Résultats pas encore disponibles");
+    showWaiting("Les résultats seront affichés ici dès le début du concours.");
   };
   document.head.appendChild(s);
 }
