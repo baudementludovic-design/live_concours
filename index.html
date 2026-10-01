@@ -597,7 +597,9 @@ function headerFromFileName(fn) {
 function load(text) {
   MODEL = buildModel(parseAbc(text));
   // Fichier contenant une ligne "MESSAGE, ..." : la page affiche seulement ce message
-  const msg = (text || "").match(/^\s*MESSAGE\s*,(.*)$/mi);
+  let msg = (text || "").match(/^\s*MESSAGE\s*,(.*)$/mi);
+  // Fichier sans données de concours (pas de ligne EquipeNbre) : sa première ligne de texte sert de message
+  if (!msg && !/EquipeNbre/i.test(text || "")) { const l = (text || "").split(/\r?\n/).find(x => x.trim()); if (l) msg = [l, l]; }
   ["#tabs", "#stats", ".legend"].forEach(s => { $(s).style.display = msg ? "none" : ""; });
   if (msg) {
     $("#title").textContent = document.title = "Résultats en direct";
