@@ -48,6 +48,10 @@ header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--b
 .search .go{position:absolute;right:4px;top:4px;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
 .badge.wait{background:#f1ebfe;color:#7c3aed}
 @media (prefers-color-scheme: dark){.badge.wait{background:#2a1f45;color:#b197fc}}
+.message{margin:12vh auto;max-width:640px;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:40px 28px;box-shadow:var(--shadow)}
+.message .ic{width:56px;height:56px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;background:#f1ebfe;color:#7c3aed}
+.message .ic svg{position:static;width:28px;height:28px;color:inherit}
+.message p{margin:0;font-size:clamp(20px,3.2vw,30px);font-weight:700;letter-spacing:-.01em;line-height:1.3}
 .search svg{position:absolute;left:11px;top:11px;width:18px;height:18px;color:var(--faint)}
 
 nav.tabs{display:flex;gap:4px;padding-bottom:10px;overflow-x:auto;scrollbar-width:none}
@@ -592,6 +596,15 @@ function headerFromFileName(fn) {
 
 function load(text) {
   MODEL = buildModel(parseAbc(text));
+  // Fichier contenant une ligne "MESSAGE, ..." : la page affiche seulement ce message
+  const msg = (text || "").match(/^\s*MESSAGE\s*,(.*)$/mi);
+  ["#tabs", "#stats", ".legend"].forEach(s => { $(s).style.display = msg ? "none" : ""; });
+  if (msg) {
+    $("#title").textContent = document.title = "Résultats en direct";
+    $("#subtitle").textContent = ""; $("#foot").textContent = "";
+    $("#view").innerHTML = `<div class="message"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><p>${esc(msg[1].trim())}</p></div>`;
+    return;
+  }
   const h = headerFromFileName(CONFIG.fileName);
   $("#title").textContent = h.title; document.title = h.title;
   $("#subtitle").textContent = h.sub;
