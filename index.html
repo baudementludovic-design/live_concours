@@ -132,6 +132,8 @@ button.tm:hover{border-color:var(--accent)}
 .champion{text-align:center;border-radius:16px;padding:26px 16px;background:radial-gradient(120% 120% at 50% 0%,rgba(245,197,66,.25),var(--panel) 60%);border:1px solid rgba(245,197,66,.5)}
 .champion .cup{font-size:34px}
 .champion .who{font-size:30px;font-weight:900;color:var(--gold);margin-top:6px}
+.champion .champ-compo{margin-top:14px;padding-top:12px;border-top:1px solid rgba(183,134,11,.3);text-align:left}
+.champion .champ-compo .players li{font-size:12px}
 .champion .who.ph{font-size:15px;color:var(--muted);font-weight:650}
 
 /* ---------- Terrains ---------- */
@@ -520,7 +522,7 @@ function renderConcours(c) {
   if (step === "final") {
     const cols = fin.map(r => `<div class="b-col"><h3>${r.label}</h3><div class="b-list">${r.matches.map(matchCard).join("")}</div></div>`);
     const champ = fin.length ? fin[fin.length - 1].champion : 0;
-    cols.push(`<div class="b-col"><h3>Vainqueur</h3><div class="b-list"><div class="champion"><div class="cup">🏆</div>${isTeam(champ) ? `<div class="who">N° ${champ}</div>` : `<div class="who ph">À déterminer</div>`}</div></div></div>`);
+    cols.push(`<div class="b-col"><h3>Vainqueur</h3><div class="b-list"><div class="champion"><div class="cup">🏆</div>${isTeam(champ) ? `<div class="who">N° ${champ}</div>${TEAMS[champ] ? `<div class="champ-compo">${playersHtml(champ)}</div>` : ""}` : `<div class="who ph">À déterminer</div>`}</div></div></div>`);
     content = `<div class="sec-head"><div><h2>Phase finale</h2><p>Tableau final et vainqueur</p></div></div><div class="bracket">${cols.join("")}</div>`;
   } else {
     const r = c.rounds.find(x => x.key === step);
