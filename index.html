@@ -679,6 +679,21 @@ function headerFromFileName(fn) {
   return { title: `Concours ${type}`, sub: `${date.charAt(0).toUpperCase() + date.slice(1)} · ${parts.slice(0, -1).join(" ")}` };
 }
 
+/* En-tête depuis le fichier .param du concours (Date_Competition + Libellé) */
+let PARAMS = "";
+function headerFromParams(txt) {
+  const get = re => { const l = (txt || "").split(/\r?\n/).find(x => re.test(x)); return l ? l.slice(l.indexOf(",") + 1).trim() : ""; };
+  const lib = get(/^Libell/i), dt = get(/^Date_Comp/i);
+  const m = lib.match(/^(\d{4})(\d{2})(\d{2})_(.+)$/);
+  if (!m) return null;
+  const parts = m[4].split("_").filter(x => !/^Organisation/i.test(x));
+  const type = parts[parts.length - 1].replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2");
+  const d = dt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const date = (d ? new Date(+d[3], +d[2] - 1, +d[1]) : new Date(+m[1], +m[2] - 1, +m[3]))
+    .toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return { title: `Concours ${type}`, sub: `${date.charAt(0).toUpperCase() + date.slice(1)} · ${parts.slice(0, -1).join(" ")}` };
+}
+
 function load(text) {
   MODEL = buildModel(parseAbc(text));
   // Fichier contenant une ligne "MESSAGE, ..." : la page affiche seulement ce message
@@ -692,11 +707,11 @@ function load(text) {
     $("#view").innerHTML = `<div class="message"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><p>${esc(msg[1].trim())}</p></div>`;
     return;
   }
-  const h = headerFromFileName(CONFIG.fileName);
+  const h = headerFromParams(PARAMS) || headerFromFileName(CONFIG.fileName);
   $("#title").textContent = h.title; document.title = h.title;
   $("#subtitle").textContent = h.sub;
   $("#teamsline").textContent = MODEL.teams ? `${MODEL.teams} équipes au départ` : "";
-  $("#foot").textContent = `Source : ${CONFIG.fileName} · ${MODEL.teams} équipes · ${MODEL.courts.count} terrains`;
+  $("#foot").textContent = "";
   render();
 }
 
@@ -724,12 +739,13 @@ function poll() {
     s.remove();
     const d = window.ABC_DATA;
     if (!d || !d.text) { setLive(false, "Aucun fichier .abc trouvé"); showWaiting("Aucun fichier .abc trouvé dans le dossier surveillé."); return; }
-    const sig = d.fileName + "|" + d.modified + "|" + d.text.length + "|" + (d.teams || "").length;
+    const sig = d.fileName + "|" + d.modified + "|" + d.text.length + "|" + (d.teams || "").length + "|" + (d.params || "").length;
     if (sig !== lastSignature) {
       lastSignature = sig;
       CONFIG.fileName = d.fileName;
       const dlgOpen = $("#dlg").open ? $("#d-title").textContent : null;
       TEAMS = parseTeams(d.teams);
+      PARAMS = d.params || "";
       if ($("#dlgTeams").open) renderTeamList();
       try { load(d.text); } catch (e) { console.error(e); setLive(false, "Fichier illisible"); return; }
       if (dlgOpen) { const n = Number(dlgOpen.replace(/\D/g, "")); if (n) { if (/^Terrain/.test(dlgOpen)) { if (allMatches().some(x => x.status === "encours" && x.court === n)) showCourt(n); else $("#dlg").close(); } else showTeam(n); } }
