@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Concours live">
 <title>Résultats du concours – v2 clair</title>
 <style>
 :root{
@@ -285,6 +290,53 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 .duo .sh .tcard-act{gap:8px}
 .badge[data-court]{cursor:pointer}
 
+/* ===== Alertes terrain ===== */
+.pin-alert{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line-2)}
+.abtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--panel);color:var(--muted);border-radius:8px;
+  padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.abtn svg{width:14px;height:14px}
+.abtn.on{background:var(--live-soft);border-color:var(--live);color:var(--live)}
+.abtn.perm{border-color:var(--wait);color:var(--wait)}
+.pin-hint{flex-basis:100%;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.35}
+#alert{position:fixed;left:0;right:0;top:0;z-index:1000;padding:12px;display:flex;justify-content:center;pointer-events:none}
+#alert[hidden]{display:none}
+.alert-card{pointer-events:auto;width:100%;max-width:560px;border-radius:18px;padding:18px 18px 16px;color:#fff;
+  background:linear-gradient(135deg,#0f9d58,#0b7a44);box-shadow:0 12px 40px rgba(0,0,0,.35);animation:alertin .35s ease-out,alertglow 1.2s ease-in-out infinite}
+.alert-card.chg{background:linear-gradient(135deg,#7c3aed,#5b21b6)}
+.alert-top{display:flex;align-items:center;gap:12px}
+.alert-ico{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;flex:0 0 auto;animation:ring 1s ease-in-out infinite}
+.alert-ico svg{width:24px;height:24px}
+.alert-t{font-size:24px;font-weight:900;line-height:1.1}
+.alert-s{font-size:14px;font-weight:650;opacity:.95;margin-top:2px}
+.alert-d{margin-top:12px;font-size:14px;font-weight:650;opacity:.95}
+.alert-act{display:flex;gap:10px;margin-top:14px}
+.alert-act button{flex:1;border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:850;cursor:pointer;font-family:inherit}
+.alert-ok{background:#fff;color:#0b5d35}
+.alert-card.chg .alert-ok{color:#4c1d95}
+.alert-see{background:rgba(255,255,255,.2);color:#fff}
+@keyframes alertin{from{transform:translateY(-24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes alertglow{50%{box-shadow:0 12px 40px rgba(0,0,0,.35),0 0 0 6px rgba(255,255,255,.28)}}
+@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(6deg)}}
+@media (prefers-reduced-motion:reduce){.alert-card,.alert-ico{animation:none}}
+
+
+/* ===== Alerte téléphone verrouillé / émetteur ===== */
+.pushsteps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.pushsteps li{counter-increment:st;position:relative;padding:12px 12px 12px 48px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+.pushsteps li::before{content:counter(st);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--A);color:#fff;display:grid;place-items:center;font-weight:850;font-size:13px}
+.pushsteps b{display:block;margin-bottom:6px}
+.pushsteps .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pushsteps code{font-size:12.5px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:6px;padding:3px 7px;word-break:break-all}
+.pushsteps a.abtn{text-decoration:none}
+.push-st{margin-top:12px;font-size:12.5px;font-weight:650;color:var(--muted)}
+.push-st.ok{color:var(--live)} .push-st.ko{color:var(--B)}
+#emetteur{margin-top:18px;border:2px solid var(--wait);border-radius:var(--r);padding:12px 14px;background:var(--wait-soft)}
+#emetteur[hidden]{display:none}
+#emetteur h2{margin:0 0 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--wait)}
+#emetteur .em-st{display:flex;gap:16px;flex-wrap:wrap;font-weight:750;font-size:14px;margin:6px 0}
+#emetteur .em-st span small{display:block;font-size:11px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.05em}
+#emetteur ul{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--muted)}
+#emetteur .em-note{font-size:12px;color:var(--muted);font-weight:600;margin-top:6px}
 </style>
 </head>
 <body>
@@ -309,7 +361,10 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
   </div>
 </header>
 
+<div id="alert" hidden role="alertdialog" aria-live="assertive" aria-label="Alerte terrain"></div>
+
 <main class="wrap">
+  <section id="emetteur" hidden aria-live="polite"></section>
   <section id="pinned" hidden aria-live="polite"></section>
   <section id="view"></section>
   <div class="legend">
@@ -327,6 +382,10 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
   <div class="d-body" id="d-body"></div>
 </dialog>
 
+<dialog id="dlgPush">
+  <div class="d-head"><h3>Alerte même téléphone verrouillé</h3><button class="d-close" onclick="dlgPush.close()" aria-label="Fermer">×</button></div>
+  <div class="d-body" id="push-body"></div>
+</dialog>
 <dialog id="dlgTeams" class="wide">
   <div class="d-head"><h3>Liste des équipes</h3><button class="d-close" onclick="dlgTeams.close()" aria-label="Fermer">×</button></div>
   <div class="d-tools"><input id="tq" type="search" placeholder="Filtrer : n° d'équipe, nom de joueur ou club…" aria-label="Filtrer les équipes"></div>
@@ -343,7 +402,11 @@ const CONFIG = {
   fileName: "",
   // Plus tard : noms des équipes { 1: "Dupont / Martin", ... }
   teamNames: {},
-  showLicence: false        // true pour afficher les n° de licence dans la liste des équipes
+  showLicence: false,       // true pour afficher les n° de licence dans la liste des équipes
+  // Alertes téléphone verrouillé (service ntfy). Aucun compte à créer.
+  ntfyServer: "https://ntfy.sh",
+  ntfySecret: "",           // facultatif : un mot au choix, mélangé au nom des sujets pour les rendre impossibles à deviner
+  ntfyPrefix: ""            // facultatif : impose le nom de base des sujets (sinon calculé à partir du concours)
 };
 
 /* ============ STRUCTURE DU FICHIER ============ */
@@ -693,7 +756,7 @@ let PIN = loadPin();
 
 function loadPin() {
   try { const v = JSON.parse(localStorage.getItem(PIN_KEY)); if (v && Number.isInteger(v.team)) return v; } catch (e) {}
-  return { team: null, comp: null };
+  return { team: null, comp: null, push: false };
 }
 function savePin() {
   try { PIN.team ? localStorage.setItem(PIN_KEY, JSON.stringify(PIN)) : localStorage.removeItem(PIN_KEY); } catch (e) {}
@@ -716,8 +779,10 @@ function syncPinButtons() {
 }
 
 function setPin(n) {
-  PIN = n ? { team: n, comp: compKey() } : { team: null, comp: null };
-  savePin(); renderPinned(); syncPinButtons();
+  PIN = n ? { team: n, comp: compKey(), push: false } : { team: null, comp: null, push: false };
+  savePin();
+  if (n) { unlockAudio(); saveSeen(snapshotPin()); } else { saveSeen(null); stopAlert(); }
+  renderPinned(); syncPinButtons();
 }
 function togglePin(n) {
   if (PIN.team === n) { setPin(null); return; }
@@ -730,6 +795,13 @@ function togglePin(n) {
 
 // Situation actuelle d'une équipe, déduite de sa dernière partie dans le fichier du logiciel
 function teamSituation(n) {
+  const r = teamSituationRaw(n);
+  const items = isTeam(n) && n <= MODEL.teams ? allMatches().filter(m => m.a === n || m.b === n) : [];
+  const m = items[items.length - 1];
+  r.match = m ? `${m.concours}|${m.roundKey}|${m.n}` : null;
+  return r;
+}
+function teamSituationRaw(n) {
   const none = text => ({ color: "none", badge: "Aucune partie", cls: "", where: "", text });
   if (!isTeam(n) || n > MODEL.teams) return none("Cette équipe n'apparaît pas dans ce concours.");
   const items = allMatches().filter(m => m.a === n || m.b === n);
@@ -778,14 +850,304 @@ function renderPinned() {
     <div class="pin-sit">${badge}${s.where ? `<span class="pin-meta">${esc(s.where)}</span>` : ""}</div>
     <div class="pin-txt">${esc(s.text)}</div>
     ${TEAMS[n] ? `<div class="pin-compo">${playersHtml(n)}</div>` : ""}
+    ${alertControlsHtml()}
   </div>`;
   box.hidden = false;
+  syncAwake();
+}
+
+
+/* ============ ALERTE « MON ÉQUIPE A UN TERRAIN » ============ */
+// Tout reste sur l'appareil : la page compare, à chaque mise à jour du fichier, la situation de l'équipe épinglée
+// avec ce qu'elle avait vu la fois précédente. Passage « sans terrain » -> « terrain X » = alerte.
+const ALERT_KEY = "live_concours_alertes_actives", SEEN_KEY = "live_concours_equipe_vue";
+let ALERTS = (() => { try { return localStorage.getItem(ALERT_KEY) !== "0"; } catch (e) { return true; } })();
+const BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
+const BELL_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.7 3A6 6 0 0 1 18 8c0 2.6.4 4.6.9 6"/><path d="M17 17H3s3-2 3-9c0-.6.1-1.2.3-1.7"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="m2 2 20 20"/></svg>';
+
+function snapshotPin() {
+  if (!PIN.team || !MODEL) return null;
+  const s = teamSituation(PIN.team);
+  return { team: PIN.team, comp: PIN.comp, match: s.match, court: s.court || null };
+}
+function loadSeen() { try { return JSON.parse(localStorage.getItem(SEEN_KEY)); } catch (e) { return null; } }
+function saveSeen(v) { try { v ? localStorage.setItem(SEEN_KEY, JSON.stringify(v)) : localStorage.removeItem(SEEN_KEY); } catch (e) {} }
+
+function checkPinAlert() {
+  const cur = snapshotPin(); if (!cur) return;
+  const prev = loadSeen();
+  saveSeen(cur);
+  if (!ALERTS || !cur.court) return;
+  if (!prev || prev.team !== cur.team || prev.comp !== cur.comp) return;     // première observation : pas d'alerte
+  if (prev.match === cur.match && prev.court === cur.court) return;          // rien de nouveau
+  fireAlert(teamSituation(cur.team), prev.match === cur.match && prev.court ? "change" : "new");
+}
+
+/* --- son (WebAudio) : le navigateur n'autorise le son qu'après un geste de l'utilisateur --- */
+let audioCtx = null, ringTimer = null, ringCount = 0, titleTimer = null, baseTitle = "";
+function unlockAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) {}
+}
+["pointerdown", "touchend", "click"].forEach(ev => document.addEventListener(ev, () => { if (PIN.team && ALERTS) unlockAudio(); }, { passive: true }));
+function beeps() {
+  if (!audioCtx) return;
+  try {
+    const t0 = audioCtx.currentTime + 0.05;
+    [0, 0.32, 0.64].forEach((d, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.value = i === 2 ? 1175 : 880;
+      g.gain.setValueAtTime(0.0001, t0 + d);
+      g.gain.exponentialRampToValueAtTime(0.5, t0 + d + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.26);
+      o.connect(g).connect(audioCtx.destination); o.start(t0 + d); o.stop(t0 + d + 0.28);
+    });
+  } catch (e) {}
+}
+function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+
+function startRing() {
+  stopRing(); ringCount = 0;
+  const go = () => { beeps(); buzz([400, 200, 400, 200, 400]); if (++ringCount >= 8) stopRing(); };
+  go(); ringTimer = setInterval(go, 4000);
+}
+function stopRing() { if (ringTimer) { clearInterval(ringTimer); ringTimer = null; } buzz(0); }
+
+function systemNotify(title, body) {
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
+    const opts = { body, tag: "live-concours-terrain", renotify: true, requireInteraction: true, vibrate: [400, 200, 400, 200, 400] };
+    const fallback = () => { try { new Notification(title, opts); } catch (e) {} };
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(r => r ? r.showNotification(title, opts) : fallback()).catch(fallback);
+    } else fallback();
+  } catch (e) {}
+}
+
+function fireAlert(s, kind) {
+  const chg = kind === "change";
+  const title = chg ? `Changement : terrain ${s.court}` : `Terrain ${s.court} !`;
+  const sub = `Équipe n° ${PIN.team}`;
+  const detail = `${s.where}${s.text ? " — " + s.text : ""}`;
+  const box = $("#alert");
+  box.innerHTML = `<div class="alert-card${chg ? " chg" : ""}">
+    <div class="alert-top"><span class="alert-ico">${BELL_SVG}</span>
+      <div><div class="alert-t">${esc(title)}</div><div class="alert-s">${esc(sub)} — rendez-vous sur le terrain ${s.court}</div></div></div>
+    <div class="alert-d">${esc(detail)}</div>
+    <div class="alert-act"><button class="alert-ok" data-alert-ok>OK, j'y vais</button><button class="alert-see" data-court="${s.court}">Voir la partie</button></div>
+  </div>`;
+  box.hidden = false;
+  startRing();
+  if (!baseTitle) baseTitle = document.title;
+  let on = false; clearInterval(titleTimer);
+  titleTimer = setInterval(() => { document.title = (on = !on) ? `🔔 ${title}` : baseTitle; }, 1000);
+  systemNotify(title, `${sub} · ${detail}`);
+}
+function stopAlert() {
+  stopRing(); clearInterval(titleTimer); titleTimer = null;
+  if (baseTitle) { document.title = baseTitle; baseTitle = ""; }
+  const box = $("#alert"); box.hidden = true; box.innerHTML = "";
+}
+
+/* --- écran maintenu allumé tant que la page est ouverte avec une équipe épinglée --- */
+let wakeLock = null;
+async function syncAwake() {
+  try {
+    const want = ((PIN.team && ALERTS) || EMIT) && !document.hidden;
+    if (want && !wakeLock && "wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } else if (!want && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { syncAwake(); poll(); } });
+
+/* --- commandes dans la bulle --- */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+function alertControlsHtml() {
+  const perm = ("Notification" in window) ? Notification.permission : "unsupported";
+  let h = `<div class="pin-alert"><button class="abtn${ALERTS ? " on" : ""}" data-alert-toggle aria-pressed="${ALERTS}">${ALERTS ? BELL_SVG : BELL_OFF_SVG}<span>${ALERTS ? "Alerte terrain activée" : "Alerte terrain coupée"}</span></button>`;
+  if (ALERTS && perm === "default") h += `<button class="abtn perm" data-alert-perm>Autoriser les notifications</button>`;
+  h += `<button class="abtn${PIN.push ? " on" : ""}" data-push-open><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><span>${PIN.push ? "Alerte téléphone verrouillé : activée" : "Alerte même téléphone verrouillé"}</span></button>`;
+  if (ALERTS) {
+    let hint = "Gardez cette page ouverte : vous serez prévenu(e) dès que l'équipe obtient un terrain (écran maintenu allumé).";
+    if (isIOS && !isStandalone) hint += " Sur iPhone, ajoutez la page à l'écran d'accueil pour recevoir aussi les notifications système.";
+    else if (perm === "denied") hint += " Les notifications système sont bloquées dans les réglages du navigateur.";
+    h += `<div class="pin-hint">${esc(hint)}</div>`;
+  }
+  return h + `</div>`;
+}
+function toggleAlerts() {
+  ALERTS = !ALERTS;
+  try { localStorage.setItem(ALERT_KEY, ALERTS ? "1" : "0"); } catch (e) {}
+  if (ALERTS) { unlockAudio(); beeps(); buzz(120); saveSeen(snapshotPin()); } else stopAlert();
+  renderPinned();
+}
+function askNotifPermission() {
+  try { Notification.requestPermission().then(() => renderPinned()).catch(() => renderPinned()); } catch (e) {}
+}
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+
+/* ============ ALERTE TÉLÉPHONE VERROUILLÉ (ntfy) ============ */
+// Une page ouverte en mode « émetteur » (index.html?emetteur) sur le PC de l'organisateur surveille les terrains
+// et envoie une notification ntfy pour chaque équipe dont un joueur s'est inscrit. Le joueur reçoit la notification
+// via l'application ntfy, même téléphone verrouillé. Sujets ntfy : un par équipe + un sujet « inscriptions ».
+const EMIT = /[?&]emetteur(=|&|$)/.test(location.search);
+function h32(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+function ntfyBase() { return "lc-" + (CONFIG.ntfyPrefix || (h32(compKey() + "|" + CONFIG.ntfySecret) + h32(CONFIG.ntfySecret + "#" + compKey()))); }
+const teamTopic = n => `${ntfyBase()}-eq${n}`;
+const regTopic = () => `${ntfyBase()}-abonnes`;
+const pageUrl = () => /^https?:$/.test(location.protocol) ? location.href.split("#")[0].split("?")[0] : "";
+async function ntfyPublish(obj) {
+  const r = await fetch(CONFIG.ntfyServer.replace(/\/$/, "") + "/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) });
+  if (!r.ok) { const e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+}
+
+/* --- côté joueur --- */
+const REG_TS_KEY = "live_concours_push_inscrit";
+async function registerTeam(force) {
+  if (!PIN.team) return;
+  let last = 0; try { last = Number(localStorage.getItem(REG_TS_KEY + "_" + PIN.team + "_" + ntfyBase())) || 0; } catch (e) {}
+  if (!force && Date.now() - last < 20 * 60000) return;     // on se réinscrit au plus toutes les 20 min
+  await ntfyPublish({ topic: regTopic(), message: String(PIN.team), title: "Inscription équipe " + PIN.team, priority: 1 });
+  try { localStorage.setItem(REG_TS_KEY + "_" + PIN.team + "_" + ntfyBase(), String(Date.now())); } catch (e) {}
+}
+function maybeRegister() { if (PIN.push && PIN.team && !EMIT) registerTeam(false).catch(() => {}); }
+
+function pushPanelHtml(status) {
+  const n = PIN.team, topic = teamTopic(n), server = CONFIG.ntfyServer.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const secure = /^http:/.test(CONFIG.ntfyServer) ? "?secure=false" : "";
+  const deep = `ntfy://${server}/${topic}${secure}`;
+  return `<p style="margin:0 0 12px;font-size:14px">Pour être prévenu(e) <b>même téléphone verrouillé</b>, utilisez l'application gratuite <b>ntfy</b> (sans compte). Trois étapes, une seule fois :</p>
+  <ol class="pushsteps">
+    <li><b>Installez l'application ntfy</b>
+      <div class="row"><a class="abtn" href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a><a class="abtn" href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a></div></li>
+    <li><b>Abonnez-vous à l'équipe n° ${n}</b>
+      <div class="row"><a class="abtn on" href="${esc(deep)}">Ouvrir dans ntfy</a></div>
+      <div class="row" style="margin-top:8px">Sinon, dans l'app : bouton « + », puis ce nom de sujet : <code>${esc(topic)}</code><button class="abtn" data-copy="${esc(topic)}">Copier</button></div>
+      <div class="pin-hint" style="margin-top:6px">Si l'app vous le propose, autorisez les notifications et laissez le serveur par défaut (${esc(server)}).</div></li>
+    <li><b>Vérifiez que ça marche</b>
+      <div class="row"><button class="abtn on" data-push-test>Envoyer une notification test</button></div>
+      <div class="pin-hint" style="margin-top:6px">Verrouillez votre téléphone : la notification doit apparaître en quelques secondes.</div></li>
+  </ol>
+  <div class="push-st ${status && status.cls || ""}" id="push-st">${esc(status && status.text || "")}</div>`;
+}
+async function openPush() {
+  if (!PIN.team) return;
+  unlockAudio();
+  $("#push-body").innerHTML = pushPanelHtml({ text: "Inscription de l'équipe auprès de l'organisateur…" });
+  if (!$("#dlgPush").open) $("#dlgPush").showModal();
+  try {
+    await registerTeam(true);
+    PIN.push = true; savePin(); renderPinned();
+    $("#push-st").className = "push-st ok"; $("#push-st").textContent = "Équipe inscrite : l'organisateur vous enverra une notification dès qu'un terrain est attribué.";
+  } catch (e) {
+    $("#push-st").className = "push-st ko"; $("#push-st").textContent = "Impossible de joindre le service de notification (" + (e.message || "réseau") + "). Vérifiez votre connexion et réessayez.";
+  }
+}
+async function pushTest() {
+  const st = $("#push-st"); st.className = "push-st"; st.textContent = "Envoi du test…";
+  try {
+    await ntfyPublish({ topic: teamTopic(PIN.team), title: "Test : alerte terrain", message: `Équipe n° ${PIN.team} — si vous lisez ceci, les alertes fonctionnent.`, priority: 4, tags: ["bell"], ...(pageUrl() ? { click: pageUrl() } : {}) });
+    st.className = "push-st ok"; st.textContent = "Test envoyé. Rien reçu ? Vérifiez que vous êtes bien abonné(e) au sujet ci-dessus dans l'app ntfy.";
+  } catch (e) { st.className = "push-st ko"; st.textContent = "Échec de l'envoi du test (" + (e.message || "réseau") + ")."; }
+}
+function copyText(t, btn) {
+  const done = () => { const o = btn.textContent; btn.textContent = "Copié"; setTimeout(() => { btn.textContent = o; }, 1500); };
+  try { navigator.clipboard.writeText(t).then(done, () => {}); } catch (e) {}
+}
+
+/* --- côté organisateur (index.html?emetteur) --- */
+const EM_KEY = "live_concours_emetteur";
+const EM = { comp: null, subs: new Set(), seen: {}, queue: [], sent: 0, log: [], lastSend: 0, pauseUntil: 0, es: null, esTopic: null, error: "" };
+(function () { try { const v = JSON.parse(localStorage.getItem(EM_KEY)); if (v) { EM.comp = v.comp; v.subs.forEach(n => EM.subs.add(n)); EM.seen = v.seen || {}; EM.sent = v.sent || 0; EM.log = v.log || []; } } catch (e) {} })();
+function saveEm() { try { localStorage.setItem(EM_KEY, JSON.stringify({ comp: EM.comp, subs: [...EM.subs], seen: EM.seen, sent: EM.sent, log: EM.log.slice(0, 8) })); } catch (e) {} }
+const hhmm = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+function emLog(t) { EM.log.unshift(`${hhmm()} — ${t}`); EM.log = EM.log.slice(0, 8); }
+
+function emAddSub(n) {
+  if (!Number.isInteger(n) || n < 1 || n > 1999 || EM.subs.has(n)) return;
+  EM.subs.add(n);
+  if (MODEL && n <= MODEL.teams) { const s = teamSituation(n); EM.seen[n] = { match: s.match, court: s.court || null }; }   // point de départ : pas d'alerte rétroactive
+  emLog(`équipe ${n} inscrite`); saveEm(); renderEmitter();
+}
+function emListen() {
+  if (EM.es && EM.esTopic === regTopic()) return;
+  try { if (EM.es) EM.es.close(); } catch (e) {}
+  EM.esTopic = regTopic();
+  try {
+    EM.es = new EventSource(`${CONFIG.ntfyServer.replace(/\/$/, "")}/${EM.esTopic}/sse?since=24h`);
+    EM.es.onmessage = ev => { try { const d = JSON.parse(ev.data); if (d.event === "message") emAddSub(parseInt(d.message, 10)); } catch (e) {} };
+    EM.es.onerror = () => { EM.error = "liaison avec ntfy interrompue, nouvelle tentative…"; renderEmitter(); };
+    EM.es.onopen = () => { EM.error = ""; renderEmitter(); };
+  } catch (e) { EM.error = "EventSource indisponible"; }
+}
+function emitterCheck() {
+  if (!EMIT || !MODEL) return;
+  const comp = compKey();
+  if (EM.comp !== comp) { EM.comp = comp; EM.subs = new Set(); EM.seen = {}; EM.sent = 0; EM.log = []; EM.queue = []; }
+  emListen();
+  EM.subs.forEach(n => {
+    if (!isTeam(n) || n > MODEL.teams) return;
+    const s = teamSituation(n), cur = { match: s.match, court: s.court || null }, prev = EM.seen[n];
+    EM.seen[n] = cur;
+    if (!cur.court || !prev) return;
+    if (prev.match === cur.match && prev.court === cur.court) return;
+    const chg = prev.match === cur.match && !!prev.court;
+    const title = chg ? `Changement : terrain ${s.court}` : `Terrain ${s.court} !`;
+    EM.queue.push({ n, court: s.court, payload: { topic: teamTopic(n), title, message: `Équipe n° ${n} — rendez-vous sur le terrain ${s.court}. ${s.where}${s.text ? " — " + s.text : ""}`, priority: 5, tags: ["bell"], ...(pageUrl() ? { click: pageUrl() } : {}) } });
+    emLog(`équipe ${n} → terrain ${s.court} (en file)`);
+  });
+  saveEm(); renderEmitter();
+}
+// ntfy limite le rythme d'envoi (rafale de ~60 puis 1 message toutes les 5 à 10 s) : on envoie en file, un message toutes les 6 s.
+async function emPump() {
+  if (!EMIT || EM.sending || !EM.queue.length) return;
+  const now = Date.now(); if (now < EM.pauseUntil || now - EM.lastSend < 6000) return;
+  EM.sending = true; const it = EM.queue[0];
+  try {
+    await ntfyPublish(it.payload); EM.queue.shift(); EM.sent++; EM.lastSend = Date.now(); EM.error = "";
+    emLog(`notification envoyée : équipe ${it.n}, terrain ${it.court}`);
+  } catch (e) {
+    EM.pauseUntil = Date.now() + (e.status === 429 ? 60000 : 20000);
+    EM.error = e.status === 429 ? "limite d'envoi ntfy atteinte, reprise automatique dans 1 min" : "envoi impossible (" + (e.message || "réseau") + "), nouvel essai dans 20 s";
+    emLog(EM.error);
+  }
+  EM.sending = false; saveEm(); renderEmitter();
+}
+function renderEmitter() {
+  const box = $("#emetteur"); if (!EMIT) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<h2>Mode émetteur — alertes téléphone</h2>
+    <div class="em-st"><span><small>Équipes inscrites</small>${EM.subs.size}</span><span><small>Envoyées</small>${EM.sent}</span><span><small>En file</small>${EM.queue.length}</span></div>
+    ${EM.error ? `<div class="push-st ko">${esc(EM.error)}</div>` : `<div class="push-st ok">Liaison ntfy active</div>`}
+    <div class="em-note">Laissez cet onglet ouvert (fenêtre non réduite, ordinateur non mis en veille). Les joueurs s'inscrivent depuis leur page, via « Alerte même téléphone verrouillé ».</div>
+    ${EM.log.length ? `<ul>${EM.log.slice(0, 5).map(l => `<li>${esc(l)}</li>`).join("")}</ul>` : ""}`;
+}
+// Horloge de secours : un Worker n'est pas ralenti quand l'onglet est en arrière-plan (contrairement à setInterval)
+if (EMIT) {
+  let t = 0;
+  const tickFn = () => { t++; if (t % 5 === 0) poll(); emPump(); };
+  try { const w = new Worker(URL.createObjectURL(new Blob(["setInterval(()=>postMessage(1),1000)"], { type: "text/javascript" }))); w.onmessage = tickFn; }
+  catch (e) { setInterval(tickFn, 1000); }
 }
 
 /* ============ ÉVÉNEMENTS ============ */
 document.addEventListener("click", e => {
   const pb = e.target.closest("[data-pin]"); if (pb) { togglePin(Number(pb.dataset.pin)); return; }
   if (e.target.closest("[data-unpin]")) { setPin(null); return; }
+  if (e.target.closest("[data-alert-toggle]")) { toggleAlerts(); return; }
+  if (e.target.closest("[data-alert-perm]")) { askNotifPermission(); return; }
+  if (e.target.closest("[data-alert-ok]")) { stopAlert(); return; }
+  if (e.target.closest("[data-push-open]")) { openPush(); return; }
+  const cp = e.target.closest("[data-copy]"); if (cp) { copyText(cp.dataset.copy, cp); return; }
+  if (e.target.closest("[data-push-test]")) { pushTest(); return; }
+  const ac = e.target.closest("#alert [data-court]"); if (ac) { const c = Number(ac.dataset.court); stopAlert(); showCourt(c); return; }
   const t = e.target.closest("[data-tab]"); if (t) { state.tab = t.dataset.tab; state.filter = "all"; render(); return; }
   const s = e.target.closest("[data-step]"); if (s) { state.step[state.tab] = s.dataset.step; state.filter = "all"; render(); return; }
   const f = e.target.closest("[data-filter]"); if (f) { state.filter = f.dataset.filter; render(); return; }
@@ -796,6 +1158,7 @@ $("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDef
 $("#qgo").addEventListener("click", e => { e.preventDefault(); const v = Number($("#q").value); $("#q").blur(); setTimeout(() => showTeam(v), 0); });
 $("#dlg").addEventListener("click", e => { if (e.target.id === "dlg") e.target.close(); });
 $("#dlgTeams").addEventListener("click", e => { if (e.target.id === "dlgTeams") e.target.close(); });
+$("#dlgPush").addEventListener("click", e => { if (e.target.id === "dlgPush") e.target.close(); });
 $("#btnTeams").addEventListener("click", openTeamList);
 $("#tq").addEventListener("input", renderTeamList);
 
@@ -845,6 +1208,9 @@ function load(text) {
   $("#foot").textContent = "";
   render();
   renderPinned();
+  checkPinAlert();
+  maybeRegister();
+  emitterCheck();
 }
 
 /* ============ LECTURE AUTOMATIQUE ============ */
@@ -895,6 +1261,7 @@ function poll() {
   document.head.appendChild(s);
 }
 
+renderEmitter();
 poll();
 setInterval(poll, CONFIG.refreshSeconds * 1000);
 const tick = () => { $("#clock").textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
