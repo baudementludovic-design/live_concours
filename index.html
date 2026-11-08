@@ -257,6 +257,34 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 .duo .sh .num{font-size:22px;font-weight:900;color:var(--accent)}
 @media (max-width:560px){.duo{grid-template-columns:1fr}}
 
+/* ===== Épingler mon équipe ===== */
+#pinned{margin-top:18px}
+#pinned[hidden]{display:none}
+.pin{border:1px solid var(--line-2);border-left:4px solid var(--pc,var(--A));border-radius:var(--r);padding:12px 14px 14px;
+  background:linear-gradient(180deg,var(--pcs,var(--A-soft)),var(--panel) 85%);box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.pin-head{display:flex;align-items:center;gap:10px}
+.pin-ico{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--pc,var(--A));color:#fff;flex:0 0 auto}
+.pin-ico svg{width:16px;height:16px}
+.pin-title{flex:1;min-width:0;font-weight:850;font-size:15px;line-height:1.2}
+.pin-title small{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.pin-title .num{font-size:20px}
+.pin-x{border:1px solid var(--line-2);background:var(--panel);width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:18px;line-height:1;flex:0 0 auto}
+.pin-x:hover{border-color:var(--B);color:var(--B)}
+.pin-sit{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 2px}
+.pin-sit .badge{font-size:12px;padding:6px 11px}
+.pin-meta{font-size:12px;color:var(--muted);font-weight:650}
+.pin-txt{font-size:15px;font-weight:650;margin-top:4px}
+.pin-compo{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line-2)}
+.pin-compo .players{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px}
+.pinbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--panel);color:var(--muted);border-radius:8px;
+  padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.pinbtn svg{width:14px;height:14px}
+.pinbtn:hover{border-color:var(--A);color:var(--A)}
+.pinbtn.on{background:var(--A-soft);border-color:var(--A);color:var(--A)}
+.tcard-act{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.duo .sh .tcard-act{gap:8px}
+.badge[data-court]{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -282,6 +310,7 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 </header>
 
 <main class="wrap">
+  <section id="pinned" hidden aria-live="polite"></section>
   <section id="view"></section>
   <div class="legend">
     <span><i style="background:var(--live)"></i>En cours sur un terrain</span>
@@ -309,7 +338,7 @@ dialog::backdrop{background:rgba(16,24,40,.45)}
 /* ============ CONFIGURATION ============ */
 const CONFIG = {
   dataFile: "donnees.js",   // fichier produit par surveillance.ps1, dans le même dossier que cette page
-  refreshSeconds: 30,       // fréquence de relecture (version en ligne)
+  refreshSeconds: 5,        // fréquence de relecture
   staleMinutes: 3,          // avertit si le script de surveillance ne répond plus
   fileName: "",
   // Plus tard : noms des équipes { 1: "Dupont / Martin", ... }
@@ -609,7 +638,7 @@ function renderTeamList() {
   $("#teams-body").innerHTML = !nums.length
     ? `<div class="empty">La composition des équipes n'est pas disponible (fichier .Gnle introuvable).</div>`
     : `<div class="count">${list.length} équipe${list.length > 1 ? "s" : ""}${q ? " trouvée" + (list.length > 1 ? "s" : "") : ""}</div>
-       <div class="teams">${list.map(n => `<div class="tcard"><div class="tcard-h"><span class="num">${n}</span><button class="link" data-team="${n}">Voir le parcours →</button></div>${playersHtml(n)}</div>`).join("")}</div>`;
+       <div class="teams">${list.map(n => `<div class="tcard"><div class="tcard-h"><span class="num">${n}</span><span class="tcard-act">${pinBtn(n)}<button class="link" data-team="${n}">Voir le parcours →</button></span></div>${playersHtml(n)}</div>`).join("")}</div>`;
 }
 
 function openTeamList() {
@@ -624,7 +653,7 @@ function showCourt(t) {
   if (!m) return;
   const c = CONCOURS[m.concours];
   const side = v => isTeam(v)
-    ? `<div class="side"><div class="sh"><span class="num">N° ${v}</span><button class="link" data-team="${v}">Voir le parcours →</button></div>${playersHtml(v)}</div>`
+    ? `<div class="side"><div class="sh"><span class="num">N° ${v}</span><span class="tcard-act">${pinBtn(v)}<button class="link" data-team="${v}">Voir le parcours →</button></span></div>${playersHtml(v)}</div>`
     : `<div class="side"><div class="count">Équipe à venir</div></div>`;
   $("#d-title").textContent = `Terrain ${t}`;
   $("#d-body").innerHTML = `<div style="--accent:var(--${c.color})"><div class="now"><b>Partie en cours</b>${c.label} · ${m.round} · partie ${m.n}</div>
@@ -650,14 +679,113 @@ function showTeam(n) {
   const last = items[items.length - 1];
   if ($("#dlgTeams").open) $("#dlgTeams").close();
   $("#d-title").textContent = teamName(n);
-  $("#d-body").innerHTML = (last ? `<div class="now"><b>Situation actuelle</b>${CONCOURS[last.concours].label} · ${last.round} — ${line(last)}</div>` : "") +
+  $("#d-body").innerHTML = `<div style="margin-bottom:12px">${pinBtn(n)}</div>` + (last ? `<div class="now"><b>Situation actuelle</b>${CONCOURS[last.concours].label} · ${last.round} — ${line(last)}</div>` : "") +
     (TEAMS[n] ? `<div class="compo"><h4>Composition</h4>${playersHtml(n)}</div><h4 class="tl-h">Parcours</h4>` : "") +
     `<ul class="tl">${items.map(m => `<li style="--cc:var(--${CONCOURS[m.concours].color})"><div class="l1">${CONCOURS[m.concours].label} · ${m.round} · partie ${m.n}</div><div class="l2">${line(m)}</div></li>`).join("")}</ul>`;
   if (!$("#dlg").open) $("#dlg").showModal();
 }
 
+/* ============ ÉPINGLER MON ÉQUIPE ============ */
+// Le choix reste uniquement sur l'appareil de l'utilisateur (localStorage) et n'est valable que pour le concours en cours.
+const PIN_KEY = "live_concours_equipe_epinglee";
+const PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>';
+let PIN = loadPin();
+
+function loadPin() {
+  try { const v = JSON.parse(localStorage.getItem(PIN_KEY)); if (v && Number.isInteger(v.team)) return v; } catch (e) {}
+  return { team: null, comp: null };
+}
+function savePin() {
+  try { PIN.team ? localStorage.setItem(PIN_KEY, JSON.stringify(PIN)) : localStorage.removeItem(PIN_KEY); } catch (e) {}
+}
+function compKey() {
+  const h = headerFromParams(PARAMS) || headerFromFileName(CONFIG.fileName);
+  return h.title + "|" + h.sub;
+}
+
+function pinBtn(n) {
+  const on = PIN.team === n;
+  return `<button class="pinbtn${on ? " on" : ""}" data-pin="${n}" aria-pressed="${on}">${PIN_SVG}<span>${on ? "Épinglée" : "Épingler"}</span></button>`;
+}
+function syncPinButtons() {
+  document.querySelectorAll("[data-pin]").forEach(b => {
+    const on = PIN.team === Number(b.dataset.pin);
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+    b.querySelector("span").textContent = on ? "Épinglée" : "Épingler";
+  });
+}
+
+function setPin(n) {
+  PIN = n ? { team: n, comp: compKey() } : { team: null, comp: null };
+  savePin(); renderPinned(); syncPinButtons();
+}
+function togglePin(n) {
+  if (PIN.team === n) { setPin(null); return; }
+  if (!MODEL || !isTeam(n) || n > MODEL.teams) return;
+  setPin(n);
+  // On ferme les fenêtres ouvertes et on remonte pour montrer la bulle
+  ["#dlg", "#dlgTeams"].forEach(s => { if ($(s).open) $(s).close(); });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Situation actuelle d'une équipe, déduite de sa dernière partie dans le fichier du logiciel
+function teamSituation(n) {
+  const none = text => ({ color: "none", badge: "Aucune partie", cls: "", where: "", text });
+  if (!isTeam(n) || n > MODEL.teams) return none("Cette équipe n'apparaît pas dans ce concours.");
+  const items = allMatches().filter(m => m.a === n || m.b === n);
+  if (!items.length) return none("Pas encore de partie programmée.");
+  const m = items[items.length - 1];
+  const where = `${CONCOURS[m.concours].label} · ${m.round} · partie ${m.n}`;
+  const opp = m.a === n ? m.b : m.a;
+  const oppTxt = isTeam(opp) ? `n° ${opp}` : isRef(opp) ? `le vainqueur de la partie ${opp - 2000}` : "un adversaire pas encore connu";
+  switch (m.status) {
+    case "encours":
+      if (m.court !== NONE) return { color: "live", badge: `Terrain ${m.court}`, cls: "live", court: m.court, where, text: `En cours contre ${oppTxt}` };
+      return { color: "wait", badge: "En attente d'un terrain", cls: "wait", where, text: `À jouer contre ${oppTxt}` };
+    case "ajouer":
+      return { color: "wait", badge: "En attente d'un terrain", cls: "wait", where, text: `À jouer contre ${oppTxt}` };
+    case "exempt":
+      return { color: "win", badge: "Exempt", cls: "done", where, text: "Qualifiée directement pour le tour suivant" };
+    case "fini":
+      if (m.winner === n) {
+        if (/^finale/i.test(m.roundKey)) return { color: "champ", badge: "Vainqueur", cls: "done", where, text: `Vainqueur du ${CONCOURS[m.concours].label} 🏆` };
+        return { color: "win", badge: "Gagné", cls: "done", where, text: `Gagné contre ${oppTxt} — prochaine partie pas encore programmée` };
+      }
+      return { color: "lost", badge: "Perdu", cls: "", where, text: `Perdu contre ${oppTxt} — plus de partie programmée pour l'instant` };
+    default:
+      return { color: "wait", badge: "En attente d'un adversaire", cls: "wait", where, text: isRef(opp) ? `Adversaire : ${oppTxt}` : "Adversaire pas encore connu" };
+  }
+}
+
+const PIN_COLORS = { live: ["live", "live-soft"], wait: ["wait", "wait-soft"], win: ["A", "A-soft"], lost: ["faint", "panel-2"], champ: ["gold", "C-soft"], none: ["faint", "panel-2"] };
+
+function renderPinned() {
+  const box = $("#pinned");
+  if (!PIN.team || !MODEL) { box.hidden = true; box.innerHTML = ""; return; }
+  if (PIN.comp !== compKey()) { setPin(null); return; }   // épinglée lors d'un autre concours : on l'oublie
+  const n = PIN.team, s = teamSituation(n), [c, cs] = PIN_COLORS[s.color];
+  const name = CONFIG.teamNames[n] ? ` <small style="display:inline;text-transform:none;letter-spacing:0">· ${esc(CONFIG.teamNames[n])}</small>` : "";
+  const badge = s.court
+    ? `<span class="badge live" data-court="${s.court}" title="Voir la partie">${esc(s.badge)}</span>`
+    : `<span class="badge ${s.cls}">${esc(s.badge)}</span>`;
+  box.innerHTML = `<div class="pin" style="--pc:var(--${c});--pcs:var(--${cs})">
+    <div class="pin-head">
+      <span class="pin-ico">${PIN_SVG}</span>
+      <div class="pin-title"><small>Mon équipe épinglée</small><span class="num">N° ${n}</span>${name}</div>
+      <button class="link" data-team="${n}">Parcours →</button>
+      <button class="pin-x" data-unpin title="Désépingler" aria-label="Désépingler mon équipe">×</button>
+    </div>
+    <div class="pin-sit">${badge}${s.where ? `<span class="pin-meta">${esc(s.where)}</span>` : ""}</div>
+    <div class="pin-txt">${esc(s.text)}</div>
+    ${TEAMS[n] ? `<div class="pin-compo">${playersHtml(n)}</div>` : ""}
+  </div>`;
+  box.hidden = false;
+}
+
 /* ============ ÉVÉNEMENTS ============ */
 document.addEventListener("click", e => {
+  const pb = e.target.closest("[data-pin]"); if (pb) { togglePin(Number(pb.dataset.pin)); return; }
+  if (e.target.closest("[data-unpin]")) { setPin(null); return; }
   const t = e.target.closest("[data-tab]"); if (t) { state.tab = t.dataset.tab; state.filter = "all"; render(); return; }
   const s = e.target.closest("[data-step]"); if (s) { state.step[state.tab] = s.dataset.step; state.filter = "all"; render(); return; }
   const f = e.target.closest("[data-filter]"); if (f) { state.filter = f.dataset.filter; render(); return; }
@@ -706,6 +834,7 @@ function load(text) {
   if (msg) {
     $("#title").textContent = document.title = "Résultats en direct";
     $("#subtitle").textContent = ""; $("#foot").textContent = "";
+    $("#pinned").hidden = true;
     $("#view").innerHTML = `<div class="message"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><p>${esc(msg[1].trim())}</p></div>`;
     return;
   }
@@ -715,6 +844,7 @@ function load(text) {
   $("#teamsline").textContent = MODEL.teams ? `${MODEL.teams} équipes au départ` : "";
   $("#foot").textContent = "";
   render();
+  renderPinned();
 }
 
 /* ============ LECTURE AUTOMATIQUE ============ */
@@ -759,8 +889,8 @@ function poll() {
   };
   s.onerror = () => {
     s.remove();
-    setLive(false, "Résultats pas encore disponibles");
-    showWaiting("Les résultats seront affichés ici dès le début du concours.");
+    setLive(false, "En attente des données");
+    showWaiting("En attente des données… Lancez <b>demarrer.bat</b> pour démarrer la surveillance du fichier.");
   };
   document.head.appendChild(s);
 }
